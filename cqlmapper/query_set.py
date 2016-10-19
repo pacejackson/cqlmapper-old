@@ -454,6 +454,11 @@ class ModelQuerySet(object):
                     '{0} is not a valid query operator'.format(operator)
                 )
             clone._where.append(operator)
+            # isinstance does not work because we specifically do NOT want
+            # subclasses of EqualsOperator
+            if type(operator.operator) is EqualsOperator:
+                clone._defer_fields.add(operator.field)
+                clone._deferred_values[operator.field] = operator.value
 
         for arg, val in kwargs.items():
             col_name, col_op = self._parse_filter_arg(arg)
