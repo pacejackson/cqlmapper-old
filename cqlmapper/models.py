@@ -108,7 +108,7 @@ class ConditionalDescriptor(object):
         if instance:
             def conditional_setter(*prepared_conditional, **unprepared_conditionals):
                 if len(prepared_conditional) > 0:
-                    conditionals = prepared_conditional[0]
+                    conditionals = [prepared_conditional[0]]
                 else:
                     conditionals = instance.objects.iff(**unprepared_conditionals)._conditional
                 instance._conditional = conditionals

@@ -56,7 +56,9 @@ class TestConditional(BaseCassEngTestCase):
         t = TestConditionalModel.create(self.conn, text='blah blah')
         t.text = 'new blah'
         with mock.patch.object(self.conn.session, 'execute') as m:
-            t.iff(text='blah blah').save(self.conn)
+            t.iff(
+                TestConditionalModel.text == 'blah blah',
+            ).save(self.conn)
 
         args = m.call_args
         self.assertIn('IF "text" = %(0)s', args[0][0].query_string)
@@ -65,16 +67,18 @@ class TestConditional(BaseCassEngTestCase):
         t = TestConditionalModel.create(self.conn, text='blah blah', count=5)
         id = t.id
         t.text = 'new blah'
-        t.iff(text='blah blah').save(self.conn)
+        t.iff(TestConditionalModel.text == 'blah blah').save(self.conn)
 
-        updated = TestConditionalModel.objects(id=id).first(self.conn)
+        updated = TestConditionalModel.objects(
+            TestConditionalModel.id == id,
+        ).first(self.conn)
         self.assertEqual(updated.count, 5)
         self.assertEqual(updated.text, 'new blah')
 
     def test_update_failure(self):
         t = TestConditionalModel.create(self.conn, text='blah blah')
         t.text = 'new blah'
-        t = t.iff(text='something wrong')
+        t = t.iff(TestConditionalModel.text == 'something wrong')
 
         with self.assertRaises(LWTException) as assertion:
             t.save(self.conn)
@@ -91,9 +95,9 @@ class TestConditional(BaseCassEngTestCase):
 
         with mock.patch.object(self.conn.session, 'execute') as m:
             TestConditionalModel.objects(
-                id=uid
+                TestConditionalModel.id == uid,
             ).iff(
-                text='blah blah'
+                TestConditionalModel.text == 'blah blah',
             ).update(self.conn, text='oh hey der')
 
         args = m.call_args

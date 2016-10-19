@@ -402,7 +402,7 @@ class ModelQuerySet(object):
 
         clone = copy.deepcopy(self)
         for operator in args:
-            if not isinstance(operator, ConditionalClause):
+            if not isinstance(operator, (ConditionalClause, WhereClause)):
                 raise QueryException(
                     '{0} is not a valid query operator'.format(operator)
                 )
