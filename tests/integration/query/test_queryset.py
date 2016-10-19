@@ -108,34 +108,16 @@ class TestMultiClusteringModel(Model):
 
 class TestQuerySetOperation(BaseCassEngTestCase):
 
-    def test_query_filter_parsing(self):
-        """
-        Tests the queryset filter method parses it's kwargs properly
-        """
-        query1 = TestModel.objects(test_id=5)
-        assert len(query1._where) == 1
-
-        op = query1._where[0]
-        assert isinstance(op.operator, operators.EqualsOperator)
-        assert op.value == 5
-
-        query2 = query1.filter(expected_result__gte=1)
-        assert len(query2._where) == 2
-
-        op = query2._where[1]
-        assert isinstance(op.operator, operators.GreaterThanOrEqualOperator)
-        assert op.value == 1
-
     def test_query_expression_parsing(self):
         """ Tests that query experessions are evaluated properly """
-        query1 = TestModel.filter(TestModel.column('test_id') == 5)
+        query1 = TestModel.filter(TestModel.test_id == 5)
         assert len(query1._where) == 1
 
         op = query1._where[0]
         assert isinstance(op.operator, operators.EqualsOperator)
         assert op.value == 5
 
-        query2 = query1.filter(TestModel.column('expected_result') >= 1)
+        query2 = query1.filter(TestModel.expected_result >= 1)
         assert len(query2._where) == 2
 
         op = query2._where[1]

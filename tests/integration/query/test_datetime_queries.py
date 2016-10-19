@@ -62,9 +62,9 @@ class TestDateTimeQueries(BaseCassEngTestCase):
         end = start + timedelta(days=3)
 
         results = DateTimeQueryTestModel.filter(
+            DateTimeQueryTestModel.day >= start,
+            DateTimeQueryTestModel.day <= end,
             user=0,
-            day__gte=start,
-            day__lt=end
         )
         assert len(results.find_all(self.conn)) == 3
 
