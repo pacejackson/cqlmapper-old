@@ -109,13 +109,13 @@ class IfExistsUpdateTests(BaseIfExistsTest):
         )
         m.text = 'changed'
         m.if_exists().update(self.conn)
-        m = TestIfExistsModel.get(self.conn, id=id)
+        m = TestIfExistsModel.get(self.conn, TestIfExistsModel.id == id)
         self.assertEqual(m.text, 'changed')
 
         # save()
         m.text = 'changed_again'
         m.if_exists().save(self.conn)
-        m = TestIfExistsModel.get(self.conn, id=id)
+        m = TestIfExistsModel.get(self.conn, TestIfExistsModel.id == id)
         self.assertEqual(m.text, 'changed_again')
 
         m = TestIfExistsModel(id=uuid4(), count=44)  # do not exists
@@ -130,7 +130,7 @@ class IfExistsUpdateTests(BaseIfExistsTest):
         # queryset update
         with self.assertRaises(LWTException) as assertion:
             TestIfExistsModel.objects(
-                id=uuid4()
+                TestIfExistsModel.id == uuid4(),
             ).if_exists().update(self.conn, count=8)
 
         self.assertEqual(
@@ -176,7 +176,7 @@ class IfExistsUpdateTests(BaseIfExistsTest):
             {'[applied]': False},
         )
 
-        q = TestIfExistsModel.objects(id=id)
+        q = TestIfExistsModel.objects(TestIfExistsModel.id == id)
         self.assertEqual(len(q.find_all(self.conn)), 1)
 
         tm = q.first(self.conn)
@@ -208,8 +208,10 @@ class IfExistsUpdateTests(BaseIfExistsTest):
         with self.assertRaises(LWTException) as assertion:
             with Batch(self.conn) as b_conn:
                 m.text = '111111112'
-                m.if_exists().update(b_conn)  # Does exist
-                n = TestIfExistsModel2(id=1, count=10, text="Failure")  # Doesn't exist
+                # Does exist
+                m.if_exists().update(b_conn)
+                # Doesn't exist
+                n = TestIfExistsModel2(id=1, count=10, text="Failure")
                 n.if_exists().update(b_conn)
 
         self.assertEqual(
@@ -223,11 +225,13 @@ class IfExistsUpdateTests(BaseIfExistsTest):
     )
     def test_delete_if_exists(self):
         """
-        Tests that delete with if_exists work, and throw proper LWT exception when they are are not applied
+        Tests that delete with if_exists work, and throw proper LWT exception
+        when they are are not applied
 
         @since 3.1
         @jira_ticket PYTHON-432
-        @expected_result Deletes will be preformed if they exist, otherwise throw LWT exception
+        @expected_result Deletes will be preformed if they exist, otherwise
+        throw LWT exception
 
         @test_category object_mapper
         """
@@ -241,7 +245,7 @@ class IfExistsUpdateTests(BaseIfExistsTest):
             text='123456789',
         )
         m.if_exists().delete(self.conn)
-        q = TestIfExistsModel.objects(id=id)
+        q = TestIfExistsModel.objects(TestIfExistsModel.id == id)
         self.assertEqual(len(q.find_all(self.conn)), 0)
 
         m = TestIfExistsModel(id=uuid4(), count=44)  # do not exists
@@ -254,7 +258,9 @@ class IfExistsUpdateTests(BaseIfExistsTest):
 
         # queryset delete
         with self.assertRaises(LWTException) as assertion:
-            TestIfExistsModel.objects(id=uuid4()).if_exists().delete(self.conn)
+            TestIfExistsModel.objects(
+                TestIfExistsModel.id == uuid4(),
+            ).if_exists().delete(self.conn)
 
         self.assertEqual(assertion.exception.existing, {
             '[applied]': False,
@@ -289,7 +295,7 @@ class IfExistsUpdateTests(BaseIfExistsTest):
         with Batch(self.conn) as b_conn:
             m.if_exists().delete(b_conn)
 
-        q = TestIfExistsModel.objects(id=id)
+        q = TestIfExistsModel.objects(TestIfExistsModel.id == id)
         self.assertEqual(len(q.find_all(self.conn)), 0)
 
         with self.assertRaises(LWTException) as assertion:
@@ -326,15 +332,20 @@ class IfExistsUpdateTests(BaseIfExistsTest):
 
         with self.assertRaises(LWTException) as assertion:
             with Batch(self.conn) as b_conn:
-                m.if_exists().delete(b_conn)  # Does exist
-                n = TestIfExistsModel2(id=3, count=42, text='1111111')  # Doesn't exist
+                # Does exist
+                m.if_exists().delete(b_conn)
+                # Doesn't exist
+                n = TestIfExistsModel2(id=3, count=42, text='1111111')
                 n.if_exists().delete(b_conn)
 
         self.assertEqual(
             assertion.exception.existing.get('[applied]'),
             False,
         )
-        q = TestIfExistsModel2.objects(id=3, count=8)
+        q = TestIfExistsModel2.objects(
+            TestIfExistsModel2.id == 3,
+            TestIfExistsModel2.count == 8,
+        )
         self.assertEqual(len(q.find_all(self.conn)), 1)
 
 
@@ -344,7 +355,7 @@ class IfExistsQueryTest(BaseIfExistsTest):
 
         with mock.patch.object(self.conn.session, 'execute') as m:
             TestIfExistsModel.objects(
-                id=uuid4()
+                TestIfExistsModel.id == uuid4()
             ).if_exists().update(self.conn, count=42)
 
         query = m.call_args[0][0].query_string
@@ -355,7 +366,7 @@ class IfExistsQueryTest(BaseIfExistsTest):
 
         with mock.patch.object(self.conn.session, 'execute') as m:
             TestIfExistsModel(
-                id=uuid4()
+                id=uuid4(),
             ).if_exists().update(self.conn, count=8)
 
         query = m.call_args[0][0].query_string

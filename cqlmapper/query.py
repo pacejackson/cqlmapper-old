@@ -29,6 +29,7 @@ from cqlmapper.operators import (
     LessThanOperator,
     LessThanOrEqualOperator,
     ContainsOperator,
+    NotEqualsOperator,
 )
 from cqlmapper.statements import (
     WhereClause,
@@ -88,6 +89,13 @@ class AbstractQueryableColumn(UnicodeMixin):
         return WhereClause(
             six.text_type(self),
             EqualsOperator(),
+            self._to_database(other),
+        )
+
+    def __ne__(self, other):
+        return WhereClause(
+            six.text_type(self),
+            NotEqualsOperator(),
             self._to_database(other),
         )
 

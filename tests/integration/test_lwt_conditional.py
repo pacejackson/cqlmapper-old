@@ -107,7 +107,9 @@ class TestConditional(BaseCassEngTestCase):
         t = TestConditionalModel.create(self.conn, text='blah blah')
         t.text = 'something else'
         uid = t.id
-        qs = TestConditionalModel.objects(id=uid).iff(text='Not dis!')
+        qs = TestConditionalModel.objects(
+            TestConditionalModel.id == uid,
+        ).iff(TestConditionalModel.text == 'Not dis!')
         with self.assertRaises(LWTException) as assertion:
             qs.update(self.conn, text='this will never work')
 
@@ -127,14 +129,18 @@ class TestConditional(BaseCassEngTestCase):
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         id = t.id
         with Batch(self.conn) as b_conn:
-            t.iff(count=5).update(b_conn, text='something else')
+            t.iff(
+                TestConditionalModel.count == 5,
+            ).update(b_conn, text='something else')
 
-        updated = TestConditionalModel.objects(id=id).first(self.conn)
+        updated = TestConditionalModel.objects(
+            TestConditionalModel.id == id,
+        ).first(self.conn)
         self.assertEqual(updated.text, 'something else')
 
         with self.assertRaises(LWTException) as assertion:
             with Batch(self.conn) as b_conn:
-                updated.iff(count=6).update(
+                updated.iff(TestConditionalModel.count == 6).update(
                     b_conn,
                     text='and another thing',
                 )
@@ -145,45 +151,61 @@ class TestConditional(BaseCassEngTestCase):
             '[applied]': False,
         })
 
-        updated = TestConditionalModel.objects(id=id).first(self.conn)
+        updated = TestConditionalModel.objects(
+            TestConditionalModel.id == id,
+        ).first(self.conn)
         self.assertEqual(updated.text, 'something else')
 
     def test_delete_conditional(self):
         # DML path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
-            t.iff(count=9999).delete(self.conn)
+            t.iff(TestConditionalModel.count == 9999).delete(self.conn)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
-        t.iff(count=5).delete(self.conn)
+        t.iff(TestConditionalModel.count == 5).delete(self.conn)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             0,
         )
 
         # QuerySet path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
             TestConditionalModel.objects(
-                id=t.id
-            ).iff(count=9999).delete(self.conn)
+                TestConditionalModel.id == t.id,
+            ).iff(TestConditionalModel.count == 9999).delete(self.conn)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
-        TestConditionalModel.objects(id=t.id).iff(count=5).delete(self.conn)
+        TestConditionalModel.objects(
+            TestConditionalModel.id == t.id,
+        ).iff(TestConditionalModel.count == 5).delete(self.conn)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             0,
         )
 
@@ -202,32 +224,40 @@ class TestConditional(BaseCassEngTestCase):
         # DML path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
-            t.iff(count__ne=5).delete(self.conn)
-        t.iff(count__ne=2).delete(self.conn)
+            t.iff(TestConditionalModel.count != 5).delete(self.conn)
+        t.iff(TestConditionalModel.count != 2).delete(self.conn)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             0,
         )
 
         # QuerySet path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
             TestConditionalModel.objects(
-                id=t.id
-            ).iff(count__ne=5).delete(self.conn)
+                TestConditionalModel.id == t.id,
+            ).iff(TestConditionalModel.count != 5).delete(self.conn)
         TestConditionalModel.objects(
-            id=t.id
-        ).iff(count__ne=2).delete(self.conn)
+            TestConditionalModel.id == t.id,
+        ).iff(TestConditionalModel.count != 2).delete(self.conn)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             0,
         )
 
@@ -246,14 +276,24 @@ class TestConditional(BaseCassEngTestCase):
         # DML path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
-            t.iff(count__ne=5).update(self.conn, text='nothing')
-        t.iff(count__ne=2).update(self.conn, text='nothing')
+            t.iff(TestConditionalModel.count != 5).update(
+                self.conn,
+                text='nothing',
+            )
+        t.iff(TestConditionalModel.count != 2).update(
+            self.conn,
+            text='nothing',
+        )
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text,
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text,
             'nothing',
         )
         t.delete(self.conn)
@@ -261,18 +301,28 @@ class TestConditional(BaseCassEngTestCase):
         # QuerySet path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
             TestConditionalModel.objects(
-                id=t.id
-            ).iff(count__ne=5).update(self.conn, text='nothing')
+                TestConditionalModel.id == t.id,
+            ).iff(TestConditionalModel.count != 5).update(
+                self.conn,
+                text='nothing',
+            )
         TestConditionalModel.objects(
-            id=t.id
-        ).iff(count__ne=2).update(self.conn, text='nothing')
+            TestConditionalModel.id == t.id,
+        ).iff(TestConditionalModel.count != 2).update(
+            self.conn,
+            text='nothing',
+        )
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text,
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text,
             'nothing',
         )
         t.delete(self.conn)
@@ -285,43 +335,62 @@ class TestConditional(BaseCassEngTestCase):
         # DML path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
-            t.iff(count=9999).update(self.conn, text=None)
+            t.iff(
+                TestConditionalModel.count == 9999,
+            ).update(self.conn, text=None)
         self.assertIsNotNone(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text
         )
-        t.iff(count=5).update(self.conn, text=None)
+        t.iff(TestConditionalModel.count == 5).update(self.conn, text=None)
         self.assertIsNone(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text
         )
 
         # QuerySet path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).count(self.conn),
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).count(self.conn),
             1,
         )
         with self.assertRaises(LWTException):
             TestConditionalModel.objects(
-                id=t.id
-            ).iff(count=9999).update(self.conn, text=None)
+                TestConditionalModel.id == t.id,
+            ).iff(TestConditionalModel.count == 9999).update(
+                self.conn,
+                text=None,
+            )
         self.assertIsNotNone(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text
         )
         TestConditionalModel.objects(
-            id=t.id
-        ).iff(count=5).update(self.conn, text=None)
+            TestConditionalModel.id == t.id,
+        ).iff(TestConditionalModel.count == 5).update(self.conn, text=None)
         self.assertIsNone(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text
         )
 
     def test_column_delete_after_update(self):
         # DML path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
-        t.iff(count=5).update(self.conn, text=None, count=6)
+        t.iff(
+            TestConditionalModel.count == 5,
+        ).update(self.conn, text=None, count=6)
 
         self.assertIsNone(t.text)
         self.assertEqual(t.count, 6)
@@ -329,14 +398,20 @@ class TestConditional(BaseCassEngTestCase):
         # QuerySet path
         t = TestConditionalModel.create(self.conn, text='something', count=5)
         TestConditionalModel.objects(
-            id=t.id
-        ).iff(count=5).update(self.conn, text=None, count=6)
+            TestConditionalModel.id == t.id,
+        ).iff(
+            TestConditionalModel.count == 5,
+        ).update(self.conn, text=None, count=6)
 
         self.assertIsNone(
-            TestConditionalModel.objects(id=t.id).first(self.conn).text
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).text
         )
         self.assertEqual(
-            TestConditionalModel.objects(id=t.id).first(self.conn).count,
+            TestConditionalModel.objects(
+                TestConditionalModel.id == t.id,
+            ).first(self.conn).count,
             6,
         )
 

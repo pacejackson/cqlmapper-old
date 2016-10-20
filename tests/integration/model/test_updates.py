@@ -51,8 +51,8 @@ class ModelUpdateTests(BaseCassEngTestCase):
         # instance
         m1 = TestUpdateModel.get(
             self.conn,
-            partition=m0.partition,
-            cluster=m0.cluster
+            TestUpdateModel.partition == m0.partition,
+            TestUpdateModel.cluster == m0.cluster,
         )
         m1.count = 6
         m1.save(self.conn)
@@ -64,8 +64,8 @@ class ModelUpdateTests(BaseCassEngTestCase):
         # database should reflect both updates
         m2 = TestUpdateModel.get(
             self.conn,
-            partition=m0.partition,
-            cluster=m0.cluster,
+            TestUpdateModel.partition == m0.partition,
+            TestUpdateModel.cluster == m0.cluster,
         )
         self.assertEqual(m2.count, m1.count)
         self.assertEqual(m2.text, m0.text)
@@ -78,8 +78,8 @@ class ModelUpdateTests(BaseCassEngTestCase):
         # instance
         m1 = TestUpdateModel.get(
             self.conn,
-            partition=m0.partition,
-            cluster=m0.cluster,
+            TestUpdateModel.partition == m0.partition,
+            TestUpdateModel.cluster == m0.cluster,
         )
         m1.count = 6
         m1.save(self.conn)
@@ -91,8 +91,8 @@ class ModelUpdateTests(BaseCassEngTestCase):
         # database should reflect both updates
         m2 = TestUpdateModel.get(
             self.conn,
-            partition=m0.partition,
-            cluster=m0.cluster,
+            TestUpdateModel.partition == m0.partition,
+            TestUpdateModel.cluster == m0.cluster,
         )
         self.assertEqual(m2.count, m1.count)
         self.assertEqual(m2.text, m0.text)
@@ -124,8 +124,8 @@ class ModelUpdateTests(BaseCassEngTestCase):
         m0 = TestUpdateModel.create(self.conn, count=5, text='monkey')
         m1 = TestUpdateModel.get(
             self.conn,
-            partition=m0.partition,
-            cluster=m0.cluster,
+            TestUpdateModel.partition == m0.partition,
+            TestUpdateModel.cluster == m0.cluster,
         )
 
         with patch.object(self.conn.session, 'execute') as execute:

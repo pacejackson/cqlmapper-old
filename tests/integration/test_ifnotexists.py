@@ -103,8 +103,8 @@ class IfNotExistsInsertTests(BaseIfNotExistsTest):
 
         with self.assertRaises(LWTException) as assertion:
             TestIfNotExistsModel.objects(
-                count=9,
-                text='111111111111',
+                TestIfNotExistsModel.count == 9,
+                TestIfNotExistsModel.text == '111111111111',
             ).if_not_exists().create(self.conn, id=id)
 
         self.assertEqual(assertion.exception.existing, {
@@ -114,7 +114,7 @@ class IfNotExistsInsertTests(BaseIfNotExistsTest):
             '[applied]': False,
         })
 
-        q = TestIfNotExistsModel.objects(id=id)
+        q = TestIfNotExistsModel.objects(TestIfNotExistsModel.id == id)
         self.assertEqual(len(q.find_all(self.conn)), 1)
 
         tm = q.first(self.conn)
@@ -153,7 +153,7 @@ class IfNotExistsInsertTests(BaseIfNotExistsTest):
             '[applied]': False,
         })
 
-        q = TestIfNotExistsModel.objects(id=id)
+        q = TestIfNotExistsModel.objects(TestIfNotExistsModel.id == id)
         self.assertEqual(len(q.find_all(self.conn)), 1)
 
         tm = q.first(self.conn)
