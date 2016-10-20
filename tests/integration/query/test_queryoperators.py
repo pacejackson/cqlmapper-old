@@ -16,7 +16,7 @@ from datetime import datetime
 
 from cqlmapper import columns
 from cqlmapper import functions
-from cqlmapper import query
+from cqlmapper import QueryException
 from cqlmapper.management import sync_table, drop_table
 from cqlmapper.models import Model
 from cqlmapper.operators import EqualsOperator
@@ -138,23 +138,20 @@ class TestTokenFunction(BaseCassEngTestCase):
 
         # The 'pk__token' virtual column may only be compared to a Token
         self.assertRaises(
-            query.QueryException,
+            QueryException,
             TestModel.objects.filter,
             pk__token__gt=10,
         )
 
         # A Token may only be compared to the `pk__token' virtual column
         func = functions.Token('a', 'b')
-        self.assertRaises(
-            query.QueryException,
-            TestModel.objects.filter,
-            p1__gt=func,
-        )
+        with self.assertRaises(QueryException):
+            TestModel.objects.filter(TestModel.p1 > func)
 
         # The # of arguments to Token must match the # of partition keys
         func = functions.Token('a')
         self.assertRaises(
-            query.QueryException,
+            QueryException,
             TestModel.objects.filter,
             pk__token__gt=func,
         )

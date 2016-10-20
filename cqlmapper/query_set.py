@@ -460,70 +460,73 @@ class ModelQuerySet(object):
                 clone._defer_fields.add(operator.field)
                 clone._deferred_values[operator.field] = operator.value
 
-        # for arg, val in kwargs.items():
-        #     col_name, col_op = self._parse_filter_arg(arg)
-        #     quote_field = True
 
-        #     if not isinstance(val, Token):
-        #         try:
-        #             column = self.model._get_column(col_name)
-        #         except KeyError:
-        #             raise QueryException(
-        #                 "Can't resolve column name: '{0}'".format(col_name)
-        #             )
-        #     else:
-        #         if col_name != 'pk__token':
-        #             raise QueryException(
-        #                 "Token() values may only be compared to the "
-        #                 "'pk__token' virtual column"
-        #             )
+        for arg, val in kwargs.items():
+            if not arg.startswith('pk__token'):
+                raise Exception()
+            col_name, col_op = self._parse_filter_arg(arg)
+            quote_field = True
 
-        #         column = columns._PartitionKeysToken(self.model)
-        #         quote_field = False
+            if not isinstance(val, Token):
+                try:
+                    column = self.model._get_column(col_name)
+                except KeyError:
+                    raise QueryException(
+                        "Can't resolve column name: '{0}'".format(col_name)
+                    )
+            else:
+                if col_name != 'pk__token':
+                    raise QueryException(
+                        "Token() values may only be compared to the "
+                        "'pk__token' virtual column"
+                    )
 
-        #         partition_columns = column.partition_columns
-        #         if len(partition_columns) != len(val.value):
-        #             raise QueryException(
-        #                 'Token() received {0} arguments but model has {1} '
-        #                 'partition keys'.format(
-        #                     len(val.value),
-        #                     len(partition_columns),
-        #                 )
-        #             )
-        #         val.set_columns(partition_columns)
+                column = columns._PartitionKeysToken(self.model)
+                quote_field = False
 
-        #     # get query operator, or use equals if not supplied
-        #     operator_class = BaseWhereOperator.get_operator(col_op or 'EQ')
-        #     operator = operator_class()
+                partition_columns = column.partition_columns
+                if len(partition_columns) != len(val.value):
+                    raise QueryException(
+                        'Token() received {0} arguments but model has {1} '
+                        'partition keys'.format(
+                            len(val.value),
+                            len(partition_columns),
+                        )
+                    )
+                val.set_columns(partition_columns)
 
-        #     if isinstance(operator, InOperator):
-        #         if not isinstance(val, (list, tuple)):
-        #             raise QueryException(
-        #                 'IN queries must use a list/tuple value'
-        #             )
-        #         query_val = [column.to_database(v) for v in val]
-        #     elif isinstance(val, BaseQueryFunction):
-        #         query_val = val
-        #     elif (isinstance(operator, ContainsOperator) and
-        #           isinstance(column, (columns.List, columns.Set, columns.Map))):
-        #         # For ContainsOperator and collections, we query using the
-        #         # value, not the container
-        #         query_val = val
-        #     else:
-        #         query_val = column.to_database(val)
-        #         if not col_op:  # only equal values should be deferred
-        #             clone._defer_fields.add(col_name)
-        #             # map by db field name for substitution in results
-        #             clone._deferred_values[column.db_field_name] = val
+            # get query operator, or use equals if not supplied
+            operator_class = BaseWhereOperator.get_operator(col_op or 'EQ')
+            operator = operator_class()
 
-        #     clone._where.append(
-        #         WhereClause(
-        #             column.db_field_name,
-        #             operator,
-        #             query_val,
-        #             quote_field=quote_field,
-        #         )
-        #     )
+            if isinstance(operator, InOperator):
+                if not isinstance(val, (list, tuple)):
+                    raise QueryException(
+                        'IN queries must use a list/tuple value'
+                    )
+                query_val = [column.to_database(v) for v in val]
+            elif isinstance(val, BaseQueryFunction):
+                query_val = val
+            elif (isinstance(operator, ContainsOperator) and
+                  isinstance(column, (columns.List, columns.Set, columns.Map))):
+                # For ContainsOperator and collections, we query using the
+                # value, not the container
+                query_val = val
+            else:
+                query_val = column.to_database(val)
+                if not col_op:  # only equal values should be deferred
+                    clone._defer_fields.add(col_name)
+                    # map by db field name for substitution in results
+                    clone._deferred_values[column.db_field_name] = val
+
+            clone._where.append(
+                WhereClause(
+                    column.db_field_name,
+                    operator,
+                    query_val,
+                    quote_field=quote_field,
+                )
+            )
 
         return clone
 

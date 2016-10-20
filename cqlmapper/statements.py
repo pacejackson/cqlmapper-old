@@ -18,9 +18,8 @@ import six
 from six.moves import filter
 
 from cassandra.query import FETCH_SIZE_UNSET
-from cqlmapper import columns
-from cqlmapper import UnicodeMixin
-from cqlmapper.functions import QueryValue
+from cqlmapper import columns, QueryException, UnicodeMixin
+from cqlmapper.functions import QueryValue, Token
 from cqlmapper.operators import BaseWhereOperator, InOperator, EqualsOperator
 
 
@@ -69,6 +68,11 @@ class BaseClause(UnicodeMixin):
     def __init__(self, field, value):
         self.field = field
         self.value = value
+        if isinstance(self.value, Token) and not self.field.startswith('token('):
+            raise QueryException(
+                "Token() values may only be compared to the "
+                "'pk__token' virtual column"
+            )
         self.context_id = None
 
     def __unicode__(self):

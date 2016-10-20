@@ -19,6 +19,7 @@ from cqlmapper import (
     CQLEngineException,
     TIMEOUT_NOT_SET,
     UnicodeMixin,
+    QueryException,
 )
 from cqlmapper.functions import QueryValue
 from cqlmapper.operators import (
@@ -39,10 +40,6 @@ from cqlmapper.statements import (
     BaseCQLStatement,
     MapDeleteClause,
 )
-
-
-class QueryException(CQLEngineException):
-    pass
 
 
 class IfNotExistsWithCounterColumn(CQLEngineException):

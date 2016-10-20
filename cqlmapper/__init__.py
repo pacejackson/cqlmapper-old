@@ -48,6 +48,10 @@ class LWTException(CQLEngineException):
         self.existing = existing
 
 
+class QueryException(CQLEngineException):
+    pass
+
+
 class ConnectionInterface(object):
 
     def execute(self, query_or_statement):
