@@ -37,9 +37,8 @@ from cqlmapper.statements import (
 )
 from cqlmapper.operators import EqualsOperator
 
-from tests.integration import PROTOCOL_VERSION
-from tests.integration.base import BaseCassEngTestCase
-from tests.integration import DEFAULT_KEYSPACE
+from tests.integration import PROTOCOL_VERSION, DEFAULT_KEYSPACE
+from tests.integration.base import BaseCassEngTestCase, main
 
 
 class TestModel(Model):
@@ -80,7 +79,7 @@ class TestModelIO(BaseCassEngTestCase):
         tm = TestModel.create(self.conn, count=8, text='123456789')
         self.assertIsInstance(tm, TestModel)
 
-        tm2 = TestModel.objects(id=tm.pk).first(self.conn)
+        tm2 = TestModel.objects(TestModel.id == tm.pk).first(self.conn)
         self.assertIsInstance(tm2, TestModel)
 
         for cname in tm._columns.keys():
@@ -97,7 +96,7 @@ class TestModelIO(BaseCassEngTestCase):
         self.assertEqual(tm.count, 8)
         self.assertEqual(tm.text, '123456789')
         tm.save(self.conn)
-        tm2 = TestModel.objects(id=tm.id).first(self.conn)
+        tm2 = TestModel.objects(TestModel.id == tm.id).first(self.conn)
 
         for cname in tm._columns.keys():
             self.assertEqual(getattr(tm, cname), getattr(tm2, cname))
@@ -141,7 +140,7 @@ class TestModelIO(BaseCassEngTestCase):
         tm.a_bool = True
         tm.save(self.conn)
 
-        tm2 = TestModel.objects(id=tm.pk).first(self.conn)
+        tm2 = TestModel.objects(TestModel.id == tm.pk).first(self.conn)
         self.assertEqual(tm.count, tm2.count)
         self.assertEqual(tm.a_bool, tm2.a_bool)
 
@@ -151,7 +150,7 @@ class TestModelIO(BaseCassEngTestCase):
         """
         tm = TestModel.create(self.conn, count=8, text='123456789')
         tm.delete(self.conn)
-        tm2 = TestModel.objects(id=tm.pk).first(self.conn)
+        tm2 = TestModel.objects(TestModel.id == tm.pk).first(self.conn)
         self.assertIsNone(tm2)
 
     def test_column_deleting_works_properly(self):
@@ -161,7 +160,7 @@ class TestModelIO(BaseCassEngTestCase):
         tm.text = None
         tm.save(self.conn)
 
-        tm2 = TestModel.objects(id=tm.pk).first(self.conn)
+        tm2 = TestModel.objects(TestModel.id == tm.pk).first(self.conn)
         self.assertIsInstance(tm2, TestModel)
 
         self.assertTrue(tm2.text is None)
@@ -251,13 +250,13 @@ class TestModelIO(BaseCassEngTestCase):
         # override default
         inst = TestModel.create(self.conn, a_bool=None)
         self.assertIsNone(inst.a_bool)
-        queried = TestModel.objects(id=inst.id).first(self.conn)
+        queried = TestModel.objects(TestModel.id == inst.id).first(self.conn)
         self.assertIsNone(queried.a_bool)
 
         # letting default be set
         inst = TestModel.create(self.conn)
         self.assertEqual(inst.a_bool, TestModel.a_bool.column.default)
-        queried = TestModel.objects(id=inst.id).first(self.conn)
+        queried = TestModel.objects(TestModel.id == inst.id).first(self.conn)
         self.assertEqual(queried.a_bool, TestModel.a_bool.column.default)
 
     def test_can_insert_model_with_all_protocol_v4_column_types(self):
@@ -319,12 +318,14 @@ class TestModelIO(BaseCassEngTestCase):
 
     def test_can_insert_double_and_float(self):
         """
-        Test for inserting single-precision and double-precision values into a Float and Double columns
+        Test for inserting single-precision and double-precision values into a
+        Float and Double columns
 
         @since 2.6.0
         @changed 3.0.0 removed deprecated Float(double_precision) parameter
         @jira_ticket PYTHON-246
-        @expected_result Each floating point column type is able to hold their respective precision values.
+        @expected_result Each floating point column type is able to hold their
+        respective precision values.
 
         @test_category data_types:primitive
         """
@@ -390,23 +391,25 @@ class TestDeleting(BaseCassEngTestCase):
 
         self.assertTrue(
             TestMultiKeyModel.filter(
-                partition=partition
+                TestMultiKeyModel.partition == partition,
             ).count(self.conn) == 5
         )
 
         TestMultiKeyModel.get(
             self.conn,
-            partition=partition,
-            cluster=0,
+            TestMultiKeyModel.partition == partition,
+            TestMultiKeyModel.cluster == 0,
         ).delete(self.conn)
 
         self.assertTrue(
             TestMultiKeyModel.filter(
-                partition=partition
+                TestMultiKeyModel.partition == partition,
             ).count(self.conn) == 4
         )
 
-        TestMultiKeyModel.filter(partition=partition).delete(self.conn)
+        TestMultiKeyModel.filter(
+            TestMultiKeyModel.partition == partition,
+        ).delete(self.conn)
 
 
 class TestUpdating(BaseCassEngTestCase):
@@ -443,8 +446,8 @@ class TestUpdating(BaseCassEngTestCase):
 
         check = TestMultiKeyModel.get(
             self.conn,
-            partition=self.instance.partition,
-            cluster=self.instance.cluster,
+            TestMultiKeyModel.partition == self.instance.partition,
+            TestMultiKeyModel.cluster == self.instance.cluster,
         )
         self.assertTrue(check.count == 5)
         self.assertTrue(check.text == 'happy')
@@ -456,8 +459,8 @@ class TestUpdating(BaseCassEngTestCase):
 
         check = TestMultiKeyModel.get(
             self.conn,
-            partition=self.instance.partition,
-            cluster=self.instance.cluster,
+            TestMultiKeyModel.partition == self.instance.partition,
+            TestMultiKeyModel.cluster == self.instance.cluster,
         )
         self.assertTrue(check.count is None)
         self.assertTrue(check.text is None)
@@ -646,8 +649,8 @@ class TestUpdating(BaseCassEngTestCase):
         initial.save(self.conn)
         current = TestModelSave.objects.get(
             self.conn,
-            partition=partition,
-            cluster=cluster,
+            TestModelSave.partition == partition,
+            TestModelSave.cluster == cluster,
         )
         self.assertEqual(current.text, text)
         self.assertEqual(current.text_list, text_list)
@@ -666,14 +669,13 @@ class TestUpdating(BaseCassEngTestCase):
         next.save(self.conn)
         current = TestModelSave.objects.get(
             self.conn,
-            partition=partition,
-            cluster=cluster,
+            TestModelSave.partition == partition,
+            TestModelSave.cluster == cluster,
         )
         self.assertEqual(current.text, None)
         self.assertEqual(current.text_list, [])
         self.assertEqual(current.text_set, set())
         self.assertEqual(current.text_map, {})
-
 
     def test_none_filter_fails(self):
         class NoneFilterModel(Model):
@@ -683,7 +685,7 @@ class TestUpdating(BaseCassEngTestCase):
         sync_table(self.conn, NoneFilterModel)
 
         try:
-            NoneFilterModel.objects(pk=None)
+            NoneFilterModel.objects(NoneFilterModel.pk == None)
             raise Exception("fail")
         except CQLEngineException as e:
             pass
@@ -760,7 +762,7 @@ class TestQueryQuoting(BaseCassEngTestCase):
 
         model1 = ReservedWordModel.create(self.conn, token='1', insert=5)
 
-        model2 = ReservedWordModel.filter(token='1')
+        model2 = ReservedWordModel.filter(ReservedWordModel.token == '1')
 
         self.assertTrue(len(model2.find_all(self.conn)) == 1)
         self.assertTrue(model1.token == model2.first(self.conn).token)
@@ -816,7 +818,8 @@ class TestQuerying(BaseCassEngTestCase):
 
         inst = TestQueryModel.filter(
             TestQueryModel.test_id == uid,
-            TestQueryModel.date == day).limit(1).first(self.conn)
+            TestQueryModel.date == day,
+        ).limit(1).first(self.conn)
 
         self.assertTrue(inst.test_id == uid)
         self.assertTrue(inst.date == day)
@@ -890,7 +893,8 @@ class TestModelRoutingKeys(BaseCassEngTestCase):
 
     def test_routing_key_generation_multi(self):
         """
-        Compares the routing key generated by composite partition key using the model with the one generated by the equivalent
+        Compares the routing key generated by composite partition key using
+        the model with the one generated by the equivalent
         bound statement
         @since 3.2
         @jira_ticket PYTHON-535
@@ -914,7 +918,8 @@ class TestModelRoutingKeys(BaseCassEngTestCase):
 
     def test_routing_key_generation_complex(self):
         """
-        Compares the routing key generated by complex composite partition key using the model with the one generated by the equivalent
+        Compares the routing key generated by complex composite partition key
+        using the model with the one generated by the equivalent
         bound statement
         @since 3.2
         @jira_ticket PYTHON-535
@@ -996,8 +1001,13 @@ class TestModelRoutingKeys(BaseCassEngTestCase):
             )
             state._add_where_clause(wc)
 
-        # Iterate over the partition key values check to see that their index matches
+        # Iterate over the partition key values check to see that their index
+        # matches
         # Those specified in the models partition field
         for indx, value in enumerate(state.partition_key_values(model._partition_key_index)):
             name = res.get(value)
             self.assertEqual(indx, model._partition_key_index.get(name))
+
+
+if __name__ == "__main__":
+    main()

@@ -68,11 +68,6 @@ class BaseClause(UnicodeMixin):
     def __init__(self, field, value):
         self.field = field
         self.value = value
-        if isinstance(self.value, Token) and not self.field.startswith('token('):
-            raise QueryException(
-                "Token() values may only be compared to the "
-                "'pk__token' virtual column"
-            )
         self.context_id = None
 
     def __unicode__(self):
@@ -118,6 +113,11 @@ class WhereClause(BaseClause):
         if not isinstance(operator, BaseWhereOperator):
             raise StatementException(
                 "operator must be of type {0}, got {1}".format(BaseWhereOperator, type(operator))
+            )
+        if isinstance(value, Token) and not self.field.startswith('token('):
+            raise QueryException(
+                "Token() values may only be compared to the "
+                "'pk__token' virtual column"
             )
         super(WhereClause, self).__init__(field, value)
         self.operator = operator

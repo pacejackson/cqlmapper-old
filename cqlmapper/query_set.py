@@ -453,12 +453,17 @@ class ModelQuerySet(object):
                 raise QueryException(
                     '{0} is not a valid query operator'.format(operator)
                 )
+            if operator.query_value.value is None:
+                raise CQLEngineException(
+                    "None values on filter are not allowed"
+                )
+
             clone._where.append(operator)
             # isinstance does not work because we specifically do NOT want
             # subclasses of EqualsOperator
             if type(operator.operator) is EqualsOperator:
                 clone._defer_fields.add(operator.field)
-                clone._deferred_values[operator.field] = operator.value
+                clone._deferred_values[operator.field] = operator.query_value.value
 
 
         for arg, val in kwargs.items():
